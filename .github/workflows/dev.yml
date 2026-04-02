@@ -1,4 +1,4 @@
-name: Deploy DEV (Backend + Frontend)
+name: Deploy DEV (Service Principal)
 
 on:
   push:
@@ -13,6 +13,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -21,22 +26,14 @@ jobs:
       - name: Install Dependencies
         run: pip install -r requirements.txt
 
-      # ✅ Debug (remove later)
-      - name: Debug Secret Length
-        run: echo "${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND_DEV }}" | wc -c
-
-      # 🚀 Deploy Backend
       - name: Deploy Backend
         uses: azure/webapps-deploy@v2
         with:
           app-name: whitelabel-poc-be-dev
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND_DEV }}
           package: .
 
-      # 🚀 Deploy Frontend
       - name: Deploy Frontend
         uses: azure/webapps-deploy@v2
         with:
           app-name: whitelabel-poc-fe-dev
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_FRONTEND_DEV }}
           package: .
