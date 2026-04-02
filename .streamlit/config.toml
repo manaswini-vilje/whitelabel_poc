@@ -1,0 +1,28 @@
+[server]
+port = 8000
+address = "0.0.0.0"
+headless = true
+enableCORS = false
+enableXsrfProtection = false
+baseUrlPath = ""
+fileWatcherType = "none"
+runOnSave = false
+allowRunOnSave = false
+
+[browser]
+gatherUsageStats = false
+serverAddress = ""
+serverPort = 8000
+
+[runner]
+fastReruns = false
+magicEnabled = true
+installTracer = false
+fixMatplotlib = true
+
+[theme]
+primaryColor = "#0f766e"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#ecfeff"
+textColor = "#134e4a"
+font = "sans serif"

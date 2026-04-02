@@ -1,0 +1,48 @@
+{
+  "brand_id": "client-template",
+  "app_name": "Client Brand",
+  "ui": {
+    "page_title": "Client Brand",
+    "title": "Client Document Processing",
+    "description": "Upload a supplier document and convert it into client-ready purchase order allocation data.",
+    "display_brand_name": "Studio Meridian",
+    "display_warehouse_label": "Logistics Zone Prime",
+    "display_blob_target_label": "Protected Delivery Route",
+    "display_runtime_label": "Private Output Workspace",
+    "upload_label": "Choose a client supplier PDF",
+    "upload_help": "Select a supplier PDF to transform into client-ready PO allocation data",
+    "file_uploaded_message": "Client file queued: {filename}",
+    "process_button_label": "Generate Client Output",
+    "processing_status_label": "Processing client file...",
+    "upload_step_label": "Uploading client file...",
+    "convert_step_label": "Converting document into client PL data...",
+    "save_step_label": "Saving client output locally...",
+    "blob_upload_step_label": "Uploading client output to Azure Blob Storage...",
+    "all_steps_completed_message": "All client processing steps completed successfully!",
+    "error_message_prefix": "Error processing client file",
+    "output_heading": "Client Output",
+    "output_url_label": "Client JSON URL",
+    "output_link_label": "Click here to view/download",
+    "success_message": "Client processing completed successfully!",
+    "output_info": "The output JSON file has been saved locally and uploaded to the client Azure Blob Storage."
+  },
+  "theme": {
+    "primary_color": "#0b5fff",
+    "background_color": "#ffffff",
+    "secondary_background_color": "#eef4ff",
+    "text_color": "#13213c",
+    "font": "sans serif"
+  },
+  "storage": {
+    "container_name": "client-processed-output",
+    "blob_prefix": "client-template/processed",
+    "local_root": "runtime/client-template",
+    "connection_string_env": "CLIENT_TEMPLATE_AZURE_STORAGE_CONNECTION_STRING"
+  },
+  "allocation": {
+    "priority": 3,
+    "warehouse_id": "CLIENT-WH",
+    "supplier_country": "GB"
+  },
+  "prompt_overrides": {}
+}

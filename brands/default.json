@@ -1,0 +1,49 @@
+{
+  "brand_id": "default",
+  "app_name": "Umbrella PO",
+  "ui": {
+    "page_title": "Northstar Flow",
+    "page_icon": "📄",
+    "title": "Document Flow Studio",
+    "description": "Upload a supplier PDF and transform it into structured purchase order output through a polished white-label workflow.",
+    "display_brand_name": "Northstar Atelier",
+    "display_warehouse_label": "Fulfillment Cluster A",
+    "display_blob_target_label": "Private Output Route",
+    "display_runtime_label": "Secure Runtime Workspace",
+    "upload_label": "Choose a PDF file",
+    "upload_help": "Select a PDF file to process",
+    "file_uploaded_message": "File uploaded: {filename}",
+    "process_button_label": "Process File",
+    "processing_status_label": "Processing file...",
+    "upload_step_label": "Uploading file...",
+    "convert_step_label": "Converting document to PL data...",
+    "save_step_label": "Saving output locally...",
+    "blob_upload_step_label": "Uploading to Azure Blob Storage...",
+    "all_steps_completed_message": "All steps completed successfully!",
+    "error_message_prefix": "Error processing file",
+    "output_heading": "Output",
+    "output_url_label": "Output JSON URL",
+    "output_link_label": "Click here to view/download",
+    "success_message": "Processing completed successfully!",
+    "output_info": "The output JSON file has been saved locally and uploaded to Azure Blob Storage."
+  },
+  "theme": {
+    "primary_color": "#1f77b4",
+    "background_color": "#ffffff",
+    "secondary_background_color": "#f0f2f6",
+    "text_color": "#262730",
+    "font": "sans serif"
+  },
+  "storage": {
+    "container_name": "processed-output",
+    "blob_prefix": "default/processed",
+    "local_root": "runtime/default",
+    "connection_string_env": "AZURE_STORAGE_CONNECTION_STRING"
+  },
+  "allocation": {
+    "priority": 3,
+    "warehouse_id": "NW",
+    "supplier_country": "SE"
+  },
+  "prompt_overrides": {}
+}

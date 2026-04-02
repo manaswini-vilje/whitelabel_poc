@@ -1,0 +1,143 @@
+{
+    "orderType": "PO",
+    "orderNr": "FA/90017/2026/DUMMY",
+    "supplier": {
+        "id": 0,
+        "name": "Aurora Living Wholesale Sp. z o.o.",
+        "address1": "18 Harbor Trade Street, 80-221 Gdansk",
+        "city": "",
+        "country": "SE",
+        "mobileNo": "+48 58 555 2100",
+        "email": "",
+        "zipCode": ""
+    },
+    "priority": 3,
+    "purchaseOrderLines": [
+        {
+            "line": 10000,
+            "itemId": "KDN000141",
+            "dateTime": "15-03-2026",
+            "quantity": 4,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 20000,
+            "itemId": "KDN000142",
+            "dateTime": "15-03-2026",
+            "quantity": 4,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 30000,
+            "itemId": "KDN000215",
+            "dateTime": "15-03-2026",
+            "quantity": 2,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 40000,
+            "itemId": "KDN000318",
+            "dateTime": "15-03-2026",
+            "quantity": 3,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 50000,
+            "itemId": "KDN000402",
+            "dateTime": "15-03-2026",
+            "quantity": 5,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 60000,
+            "itemId": "KDN000417",
+            "dateTime": "15-03-2026",
+            "quantity": 2,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 70000,
+            "itemId": "KDN000509",
+            "dateTime": "15-03-2026",
+            "quantity": 3,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 80000,
+            "itemId": "KDN000612",
+            "dateTime": "15-03-2026",
+            "quantity": 6,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 90000,
+            "itemId": "KDN000701",
+            "dateTime": "15-03-2026",
+            "quantity": 4,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 100000,
+            "itemId": "KDN000702",
+            "dateTime": "15-03-2026",
+            "quantity": 3,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 110000,
+            "itemId": "KDN000703",
+            "dateTime": "15-03-2026",
+            "quantity": 2,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 120000,
+            "itemId": "KDN000804",
+            "dateTime": "15-03-2026",
+            "quantity": 5,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 130000,
+            "itemId": "KDN000905",
+            "dateTime": "15-03-2026",
+            "quantity": 4,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 140000,
+            "itemId": "KDN000906",
+            "dateTime": "15-03-2026",
+            "quantity": 3,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 150000,
+            "itemId": "KDN001007",
+            "dateTime": "15-03-2026",
+            "quantity": 6,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 160000,
+            "itemId": "KDN001108",
+            "dateTime": "15-03-2026",
+            "quantity": 2,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 170000,
+            "itemId": "KDN001109",
+            "dateTime": "15-03-2026",
+            "quantity": 2,
+            "warehouseId": "NW"
+        },
+        {
+            "line": 180000,
+            "itemId": "KDN001210",
+            "dateTime": "15-03-2026",
+            "quantity": 4,
+            "warehouseId": "NW"
+        }
+    ]
+}

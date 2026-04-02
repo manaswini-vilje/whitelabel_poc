@@ -1,0 +1,37 @@
+{
+  "brand_id": "acme-demo",
+  "app_name": "Acme Logistics",
+  "ui": {
+    "page_title": "Velora Desk",
+    "title": "Curated Document Pipeline",
+    "description": "Upload a supplier document and route it through a refined white-label conversion workspace.",
+    "display_brand_name": "Velora Collective",
+    "display_warehouse_label": "Regional Node Seven",
+    "display_blob_target_label": "Brand Delivery Channel",
+    "display_runtime_label": "Managed Output Space",
+    "upload_label": "Choose an Acme supplier PDF",
+    "upload_help": "Select a supplier PDF to transform into Acme-ready PO allocation data",
+    "file_uploaded_message": "Acme file queued: {filename}",
+    "process_button_label": "Generate Acme Output",
+    "processing_status_label": "Processing Acme file...",
+    "blob_upload_step_label": "Uploading Acme output to Azure Blob Storage...",
+    "output_heading": "Acme Output",
+    "output_url_label": "Acme JSON URL",
+    "output_info": "The output JSON file has been saved locally and uploaded to Acme Azure Blob Storage."
+  },
+  "theme": {
+    "primary_color": "#0f766e",
+    "secondary_background_color": "#ecfeff",
+    "text_color": "#134e4a"
+  },
+  "storage": {
+    "container_name": "acme-processed-output",
+    "blob_prefix": "acme-demo/processed",
+    "local_root": "runtime/acme-demo",
+    "connection_string_env": "ACME_AZURE_STORAGE_CONNECTION_STRING"
+  },
+  "allocation": {
+    "warehouse_id": "ACME-NORTH",
+    "supplier_country": "GB"
+  }
+}

@@ -1,0 +1,56 @@
+
+{
+  "purchase_orders": [
+    {
+      "order_no": "IO501218123",
+      "order_type": "PO",
+      "warehouse_id": "NW",
+      "lines": [
+        {
+          "line_no": 10000,
+          "itemId": "HFN0003022",
+          "ordered_quantity": 10,
+          "received_quantity": 0
+        },
+        {
+          "line_no": 20000,
+          "itemId": "SYN0025992",
+          "ordered_quantity": 5,
+          "received_quantity": 0
+        }
+      ]
+    },
+    {
+      "order_no": "IO501222808",
+      "order_type": "PO",
+      "warehouse_id": "NW",
+      "lines": [
+        {
+          "line_no": 10000,
+          "itemId": "SYN0024887",
+          "ordered_quantity": 4,
+          "received_quantity": 1
+        },
+        {
+          "line_no": 20000,
+          "itemId": "HFN0007211",
+          "ordered_quantity": 6,
+          "received_quantity": 0
+        }
+      ]
+    },
+    {
+      "order_no": "IO501224387",
+      "order_type": "PO",
+      "warehouse_id": "NW",
+      "lines": [
+        {
+          "line_no": 10000,
+          "itemId": "HFN0008683",
+          "ordered_quantity": 8,
+          "received_quantity": 3
+        }
+      ]
+    }
+  ]
+}
