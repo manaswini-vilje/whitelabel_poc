@@ -1,4 +1,4 @@
-name: Deploy DEV (Service Principal)
+name: Deploy DEV (Final Working)
 
 on:
   push:
