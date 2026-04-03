@@ -10,7 +10,7 @@ env:
   PYTHON_VERSION: "3.11"
 
 jobs:
-  build-and-deploy:
+  build-and-deploy-dev:
     runs-on: ubuntu-latest
     environment: Dev
 
@@ -31,15 +31,12 @@ jobs:
 
       - name: Create deployment package
         run: |
-          mkdir -p deploy
-          cp -r app.py main.py bootstrap_brand_runtime.py startup.sh Procfile web.config deploy/
-          cp -r requirements.txt deploy/
-          cp -r src/ deploy/src/
-          cp -r brands/ deploy/brands/
-          cp -r data/ deploy/data/
-          [ -d ".streamlit" ] && cp -r .streamlit/ deploy/.streamlit/ || true
-          [ -d "samples" ] && cp -r samples/ deploy/samples/ || true
-          cd deploy && zip -r ../app.zip . -x "*.pyc" "__pycache__/*"
+          zip -r app.zip . \
+            -x ".git/*" \
+            -x ".github/*" \
+            -x "*.pyc" \
+            -x "__pycache__/*" \
+            -x ".env"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3

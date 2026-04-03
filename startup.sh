@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# Azure App Service startup script for Streamlit
-# This script starts the Streamlit app on port 8000 (Azure App Service default)
 set -e
+
+pip install --upgrade pip
+pip install -r requirements.txt
 
 python bootstrap_brand_runtime.py
 
