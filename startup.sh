@@ -50,4 +50,5 @@ exec python -m uvicorn api.main:app \
   --proxy-headers \
   --forwarded-allow-ips='*' \
   --ws-ping-interval 60 \
-  --ws-ping-timeout 300
+  --ws-ping-timeout 300 \
+  --ws-max-queue 512

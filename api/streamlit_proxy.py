@@ -252,12 +252,18 @@ async def _proxy_websocket_to_streamlit(websocket: WebSocket, path: str) -> None
     if cookie_hdr:
         extra.append(("Cookie", cookie_hdr))
 
+    # websockets>=14: if the server responds with Sec-WebSocket-Protocol (Streamlit sends
+    # "streamlit"), the client MUST declare subprotocols or handshake raises
+    # NegotiationError("no subprotocols supported") and the browser reconnects forever.
+    negotiated = selected_subprotocol or "streamlit"
     try:
         # Disable client-side keepalive pings: behind Azure they can time out (ping_timeout)
         # and tear down the link to Streamlit, which makes the browser reconnect in a loop.
         async with websockets.connect(
             target,
             max_size=50 * 1024 * 1024,
+            max_queue=512,
+            subprotocols=[negotiated],
             additional_headers=extra,
             compression=None,
             open_timeout=60,
