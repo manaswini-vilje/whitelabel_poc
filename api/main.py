@@ -3,7 +3,8 @@ FastAPI app for the React frontend. Run from the `whitelabel_poc` directory:
 
     uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
 
-Streamlit UI is unchanged: `streamlit run app.py`.
+REST routes: `/health`, `/api/*`. With `STREAMLIT_INTERNAL_URL` set, unmatched HTTP 404s and
+WebSockets are proxied to Streamlit so `/` serves the Streamlit UI (see `startup.sh`).
 """
 
 from __future__ import annotations
@@ -31,6 +32,7 @@ if str(_SRC) not in sys.path:
 from white_label import BrandConfig, load_brand_config
 
 from api.pipeline import process_uploaded_pdf
+from api.streamlit_proxy import attach_streamlit_proxy
 
 _brand: BrandConfig | None = None
 
@@ -54,15 +56,6 @@ app = FastAPI(
     title="White-label document API",
     description="REST API for the Vite frontend; pipeline lives alongside Streamlit in this repo.",
     lifespan=lifespan,
-)
-
-_cors = os.environ.get("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[o.strip() for o in _cors.split(",") if o.strip()],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
 )
 
 
@@ -133,3 +126,16 @@ async def api_process(file: UploadFile = File(...)):
         "message": bc.ui.success_message,
         "output_json": output_json,
     }
+
+
+# Streamlit UI at / when STREAMLIT_INTERNAL_URL is set (see startup.sh). CORS added after so it runs first.
+attach_streamlit_proxy(app)
+
+_cors = os.environ.get("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in _cors.split(",") if o.strip()],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)

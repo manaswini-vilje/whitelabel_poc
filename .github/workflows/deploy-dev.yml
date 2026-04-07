@@ -1,3 +1,8 @@
+# Builds a zip of this repo and deploys to Azure Web App for Linux.
+# After deploy, the Web App must run the API process — configure Startup Command to:
+#   bash startup.sh
+# That script runs FastAPI (api.main:app) on $PORT so /health, /api/brand, /api/process
+# match what whitelabel-poc-frontend calls. (Streamlit is local-only unless you add a second service.)
 name: Deploy to Azure App Service (Dev)
 
 on:
