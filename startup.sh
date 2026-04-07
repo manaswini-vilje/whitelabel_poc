@@ -23,6 +23,8 @@ python -m streamlit run app.py \
   --server.enableXsrfProtection=false \
   --browser.gatherUsageStats=false \
   --server.fileWatcherType=none \
+  --ui.hideTopBar true \
+  --client.toolbarMode minimal \
   &
 
 # Wait until Streamlit accepts HTTP (App Service may not have curl; Python is always available)

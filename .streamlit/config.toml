@@ -17,8 +17,12 @@ serverPort = 8000
 [runner]
 fastReruns = false
 magicEnabled = true
-installTracer = false
-fixMatplotlib = true
+
+[client]
+toolbarMode = "minimal"
+
+[ui]
+hideTopBar = true
 
 [theme]
 primaryColor = "#1f77b4"
