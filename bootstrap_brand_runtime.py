@@ -29,8 +29,6 @@ def build_streamlit_config(brand_config) -> str:
             "[runner]",
             "fastReruns = false",
             "magicEnabled = true",
-            "installTracer = false",
-            "fixMatplotlib = true",
             "",
             "[theme]",
             f'primaryColor = "{theme.primary_color}"',

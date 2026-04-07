@@ -182,16 +182,6 @@ def _parse_streamlit_sec_websocket_protocol(
     return selected, raw
 
 
-def _host_header_value(streamlit_http_base: str) -> str:
-    from urllib.parse import urlparse
-
-    u = urlparse(streamlit_http_base)
-    host = u.hostname or "127.0.0.1"
-    if u.port:
-        return f"{host}:{u.port}"
-    return host
-
-
 def _cookie_header_for_upstream(websocket: WebSocket) -> str | None:
     """Ensure Streamlit sees XSRF/session cookies on the internal WS handshake."""
     raw = websocket.headers.get("cookie")
@@ -212,19 +202,17 @@ async def _proxy_websocket_to_streamlit(websocket: WebSocket, path: str) -> None
     selected_subprotocol, full_protocol_header = _parse_streamlit_sec_websocket_protocol(
         websocket
     )
-    await websocket.accept(subprotocol=selected_subprotocol or "streamlit")
+    negotiated = selected_subprotocol or "streamlit"
+    await websocket.accept(subprotocol=negotiated)
 
     target_base = _http_to_ws_base(base)
     target = f"{target_base}/{path}" if path else target_base
     if websocket.url.query:
         target = f"{target}?{websocket.url.query}"
 
-    # Streamlit validates Origin against Host; internal Host 127.0.0.1 + public Origin fails.
-    # Use the browser's Host / Origin so _is_origin_allowed matches the real site.
-    public_host = websocket.headers.get("host") or _host_header_value(base)
-    extra: list[tuple[str, str]] = [
-        ("Host", public_host),
-    ]
+    # Do not set Host on the upstream handshake: `websockets` derives it from `target`, and
+    # supplying Host again (or the browser's public Host) breaks Streamlit with HTTP 400.
+    extra: list[tuple[str, str]] = []
     origin = websocket.headers.get("origin")
     if origin:
         extra.append(("Origin", origin))
@@ -245,17 +233,20 @@ async def _proxy_websocket_to_streamlit(websocket: WebSocket, path: str) -> None
             continue
         extra.append((k, v))
 
+    # subprotocols=[negotiated] already emits Sec-WebSocket-Protocol for a single token.
+    # Repeating the same header or duplicating "streamlit" can yield HTTP 400; forward the
+    # full browser header only when it carries extra comma-separated tokens (XSRF / session).
     if full_protocol_header:
-        extra.append(("Sec-WebSocket-Protocol", full_protocol_header))
+        parts = [p.strip() for p in full_protocol_header.split(",") if p.strip()]
+        if len(parts) > 1 or (parts and parts[0] != negotiated):
+            extra.append(("Sec-WebSocket-Protocol", full_protocol_header))
 
     cookie_hdr = _cookie_header_for_upstream(websocket)
     if cookie_hdr:
         extra.append(("Cookie", cookie_hdr))
 
-    # websockets>=14: if the server responds with Sec-WebSocket-Protocol (Streamlit sends
-    # "streamlit"), the client MUST declare subprotocols or handshake raises
+    # websockets>=14: server response Sec-WebSocket-Protocol requires subprotocols= or
     # NegotiationError("no subprotocols supported") and the browser reconnects forever.
-    negotiated = selected_subprotocol or "streamlit"
     try:
         # Disable client-side keepalive pings: behind Azure they can time out (ping_timeout)
         # and tear down the link to Streamlit, which makes the browser reconnect in a loop.
