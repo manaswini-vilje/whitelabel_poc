@@ -33,7 +33,12 @@ st.set_page_config(
     page_title=brand_config.ui.page_title,
     page_icon=brand_config.ui.page_icon,
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="collapsed",
+    menu_items={
+        "Get Help": None,
+        "Report a bug": None,
+        "About": None,
+    },
 )
 
 # Initialize session state
@@ -87,8 +92,6 @@ def apply_brand_theme():
     primary_soft = rgba(theme.primary_color, 0.12)
     primary_mid = rgba(theme.primary_color, 0.22)
     primary_strong = rgba(theme.primary_color, 0.82)
-    white_glass = "rgba(255, 255, 255, 0.76)"
-    white_panel = "rgba(255, 255, 255, 0.92)"
 
     st.markdown(
         f"""
@@ -108,129 +111,13 @@ def apply_brand_theme():
 
             .block-container {{
                 max-width: 1260px;
-                padding-top: 2rem;
+                padding-top: 1.25rem;
                 padding-bottom: 2rem;
             }}
 
-            .brand-hero {{
-                position: relative;
-                overflow: hidden;
-                background:
-                    linear-gradient(140deg, {white_glass} 0%, {white_panel} 48%, {rgba(theme.primary_color, 0.10)} 100%);
-                border: 1px solid {primary_mid};
-                border-radius: 30px;
-                padding: 2rem;
-                margin-bottom: 1.35rem;
-                box-shadow: 0 24px 60px {rgba(theme.primary_color, 0.12)};
-            }}
-
-            .brand-hero::before {{
-                content: "";
-                position: absolute;
-                inset: auto -3rem -5rem auto;
-                width: 15rem;
-                height: 15rem;
-                border-radius: 999px;
-                background: {primary_soft};
-                filter: blur(8px);
-            }}
-
-            .brand-hero__grid {{
-                display: grid;
-                gap: 1.25rem;
-                grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.95fr);
-                align-items: start;
-            }}
-
-            .brand-hero__eyebrow {{
-                color: {primary_color};
-                font-size: 0.82rem;
-                font-weight: 700;
-                letter-spacing: 0.08em;
-                margin-bottom: 0.75rem;
-                text-transform: uppercase;
-            }}
-
-            .brand-hero__headline {{
-                color: {text_color};
-                font-size: 2.85rem;
-                line-height: 0.98;
-                margin: 0 0 0.65rem 0;
-                letter-spacing: -0.04em;
-            }}
-
-            .brand-hero__description {{
-                color: {text_color};
-                font-size: 1.02rem;
-                line-height: 1.7;
-                margin: 0;
-                max-width: 42rem;
-                opacity: 0.9;
-            }}
-
-            .brand-hero__chips {{
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.65rem;
-                margin-top: 1rem;
-            }}
-
-            .brand-chip {{
-                background: rgba(255, 255, 255, 0.76);
-                border: 1px solid {primary_mid};
-                border-radius: 999px;
-                color: {text_color};
-                font-size: 0.84rem;
-                font-weight: 600;
-                padding: 0.55rem 0.9rem;
-            }}
-
-            .hero-panel {{
-                background: rgba(255, 255, 255, 0.78);
-                border: 1px solid {primary_mid};
-                border-radius: 24px;
-                padding: 1.1rem;
-                backdrop-filter: blur(8px);
-            }}
-
-            .hero-panel__title {{
-                color: {primary_color};
-                font-size: 0.78rem;
-                font-weight: 700;
-                letter-spacing: 0.08em;
-                margin-bottom: 1rem;
-                text-transform: uppercase;
-            }}
-
-            .hero-stat-grid {{
-                display: grid;
-                gap: 0.8rem;
-            }}
-
-            .hero-stat {{
-                background: rgba(255, 255, 255, 0.84);
-                border: 1px solid {rgba(theme.primary_color, 0.16)};
-                border-radius: 18px;
-                padding: 0.9rem 1rem;
-            }}
-
-            .hero-stat__label {{
-                color: {primary_color};
-                display: block;
-                font-size: 0.74rem;
-                font-weight: 700;
-                letter-spacing: 0.08em;
-                margin-bottom: 0.35rem;
-                text-transform: uppercase;
-            }}
-
-            .hero-stat__value {{
-                color: {text_color};
-                display: block;
-                font-size: 1rem;
-                font-weight: 700;
-                line-height: 1.35;
-                word-break: break-word;
+            header[data-testid="stHeader"],
+            div[data-testid="stToolbar"] {{
+                display: none !important;
             }}
 
             .section-shell {{
@@ -422,75 +309,11 @@ def apply_brand_theme():
             }}
 
             @media (max-width: 980px) {{
-                .brand-hero__grid,
                 .result-meta {{
                     grid-template-columns: 1fr;
                 }}
-
-                .brand-hero__headline {{
-                    font-size: 2.3rem;
-                }}
             }}
         </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-def render_brand_header():
-    """Render a branded app header."""
-    logo_path = brand_config.resolve_logo_path(project_root)
-    if logo_path and logo_path.exists():
-        st.image(str(logo_path), width=180)
-    elif brand_config.assets.logo_url:
-        st.image(brand_config.assets.logo_url, width=180)
-
-    display_brand_name = ui_value("display_brand_name", brand_config.app_name)
-    display_warehouse_label = ui_value(
-        "display_warehouse_label", brand_config.allocation.warehouse_id
-    )
-    display_blob_target_label = ui_value(
-        "display_blob_target_label",
-        f"{brand_config.storage.container_name}/{brand_config.storage.blob_prefix}",
-    )
-    display_runtime_label = ui_value(
-        "display_runtime_label",
-        str(brand_config.outputs_dir(project_root).relative_to(project_root)),
-    )
-
-    st.markdown(
-        f"""
-        <section class="brand-hero">
-            <div class="brand-hero__grid">
-                <div>
-                    <div class="brand-hero__eyebrow">{escape(display_brand_name)}</div>
-                    <div class="brand-hero__headline">{escape(brand_config.ui.title)}</div>
-                    <p class="brand-hero__description">{escape(brand_config.ui.description)}</p>
-                    <div class="brand-hero__chips">
-                        <span class="brand-chip">White-label ready</span>
-                        <span class="brand-chip">Brand aware storage</span>
-                        <span class="brand-chip">PO allocation pipeline</span>
-                    </div>
-                </div>
-                <div class="hero-panel">
-                    <div class="hero-panel__title">Live Configuration</div>
-                    <div class="hero-stat-grid">
-                        <div class="hero-stat">
-                            <span class="hero-stat__label">Warehouse</span>
-                            <span class="hero-stat__value">{escape(display_warehouse_label)}</span>
-                        </div>
-                        <div class="hero-stat">
-                            <span class="hero-stat__label">Blob Target</span>
-                            <span class="hero-stat__value">{escape(display_blob_target_label)}</span>
-                        </div>
-                        <div class="hero-stat">
-                            <span class="hero-stat__label">Runtime Output</span>
-                            <span class="hero-stat__value">{escape(display_runtime_label)}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
         """,
         unsafe_allow_html=True
     )
@@ -759,7 +582,6 @@ def process_document(uploaded_file):
 def main():
     """Main Streamlit app."""
     apply_brand_theme()
-    render_brand_header()
     uploaded_file = render_workspace_overview()
     
     # Process button
