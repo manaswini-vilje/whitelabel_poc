@@ -644,11 +644,11 @@ def render_result_panel():
 def upload_to_azure_blob(local_file_path: str, blob_name: str) -> str:
     """
     Upload a file to Azure Blob Storage and return the public URL.
-    
+
     Args:
         local_file_path: Path to local file to upload
         blob_name: Name for the blob in storage
-        
+
     Returns:
         Public URL of the uploaded blob
     """
@@ -659,49 +659,39 @@ def upload_to_azure_blob(local_file_path: str, blob_name: str) -> str:
             f"{connection_string_env} environment variable is required. "
             "Please set it in your .env file."
         )
-    
+
     container_name = brand_config.storage.container_name
     blob_name = brand_config.build_blob_name(blob_name)
-    
+
     try:
-        # Create BlobServiceClient
         blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-        
-        # Get container client (create if doesn't exist)
         container_client = blob_service_client.get_container_client(container_name)
         try:
             container_client.create_container()
         except Exception:
-            # Container already exists, ignore
             pass
-        
-        # Upload blob
+
         blob_client = blob_service_client.get_blob_client(
             container=container_name,
-            blob=blob_name
+            blob=blob_name,
         )
-        
+
         with open(local_file_path, "rb") as data:
             blob_client.upload_blob(data, overwrite=True)
-        
-        # Generate blob URL
-        # Format: https://<storage_account>.blob.core.windows.net/<container>/<blob>
-        # Extract account name from connection string
+
         account_name = None
         for part in connection_string.split(";"):
             if part.startswith("AccountName="):
-                account_name = part.split("=")[1]
+                account_name = part.split("=", 1)[1]
                 break
-        
+
         if not account_name:
             raise ValueError("Could not extract account name from connection string")
-        
-        # Generate URL (assumes container is public or uses SAS token)
-        # Note: If container is private, you may need to generate a SAS URL instead
-        url = f"https://{account_name}.blob.core.windows.net/{container_name}/{blob_name}"
-        
-        return url
-        
+
+        return (
+            f"https://{account_name}.blob.core.windows.net/{container_name}/{blob_name}"
+        )
+
     except Exception as e:
         raise Exception(f"Failed to upload to Azure Blob Storage: {str(e)}")
 
@@ -709,10 +699,10 @@ def upload_to_azure_blob(local_file_path: str, blob_name: str) -> str:
 def process_document(uploaded_file):
     """
     Process uploaded document through the backend pipeline.
-    
+
     Args:
         uploaded_file: Streamlit UploadedFile object
-        
+
     Returns:
         Path to output JSON file
     """
@@ -723,48 +713,42 @@ def process_document(uploaded_file):
     uploads_dir.mkdir(parents=True, exist_ok=True)
     data_dir.mkdir(parents=True, exist_ok=True)
     outputs_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Save uploaded file temporarily
+
     input_filename = uploaded_file.name
     temp_file_path = uploads_dir / input_filename
-    
+
     with open(temp_file_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
-    
+
     try:
         pl_data_path = data_dir / "pl_data.json"
         final_allocation_path = data_dir / "final_allocation.json"
         custom_prompt = brand_config.prompt_overrides.get("document_extraction_prompt")
-        
-        # Step 1: Convert Document to PL Data
+
         converter = DocumentToJSONConverter()
         converter.convert_to_json(
             str(temp_file_path),
             str(pl_data_path),
-            custom_prompt=custom_prompt
+            custom_prompt=custom_prompt,
         )
-        
-        # Step 2: Generate Final Allocation from PL Data
+
         AllocationGenerator.generate_po_allocation_from_pl(
             str(pl_data_path),
             str(final_allocation_path),
             priority=brand_config.allocation.priority,
             warehouse_id=brand_config.allocation.warehouse_id,
-            supplier_country=brand_config.allocation.supplier_country
+            supplier_country=brand_config.allocation.supplier_country,
         )
 
-        # Generate output filename
         input_stem = Path(input_filename).stem
         output_filename = f"{input_stem}_output.json"
         output_path = outputs_dir / output_filename
-        
-        # Copy final_allocation.json to outputs directory with new name
+
         shutil.copy2(final_allocation_path, output_path)
-        
+
         return str(output_path)
-        
+
     finally:
-        # Cleanup temporary uploaded file
         try:
             if temp_file_path.exists():
                 os.remove(temp_file_path)
@@ -796,20 +780,19 @@ def main():
                 # Show processing status
                 with st.status(brand_config.ui.processing_status_label, expanded=True) as status:
                     st.write(brand_config.ui.upload_step_label)
-                    
+
                     st.write(brand_config.ui.convert_step_label)
                     output_path = process_document(uploaded_file)
-                    
+
                     st.write(brand_config.ui.save_step_label)
-                    # Output is already saved in process_document
-                    
+
                     st.write(brand_config.ui.blob_upload_step_label)
                     output_filename = Path(output_path).name
                     blob_url = upload_to_azure_blob(output_path, output_filename)
-                    
+
                     status.update(label=brand_config.ui.success_message, state="complete")
                     st.write(brand_config.ui.all_steps_completed_message)
-                
+
                 st.session_state.output_url = blob_url
                 st.session_state.output_path = output_path
                 st.session_state.output_blob_name = brand_config.build_blob_name(output_filename)
