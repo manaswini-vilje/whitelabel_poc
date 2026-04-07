@@ -8,6 +8,7 @@ Run Streamlit bound to 127.0.0.1 only; the public port serves uvicorn (FastAPI +
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import re
 from html import escape
@@ -18,6 +19,8 @@ import httpx
 import websockets
 from fastapi import WebSocket
 from starlette.middleware.base import BaseHTTPMiddleware
+from websockets.exceptions import ConnectionClosed
+
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -25,6 +28,8 @@ if TYPE_CHECKING:
     from fastapi import FastAPI
 
 POC_ROOT = Path(__file__).resolve().parent.parent
+
+logger = logging.getLogger(__name__)
 
 _SKIP_REQUEST_HEADERS = frozenset(
     {
@@ -186,6 +191,16 @@ def _host_header_value(streamlit_http_base: str) -> str:
     return host
 
 
+def _cookie_header_for_upstream(websocket: WebSocket) -> str | None:
+    """Ensure Streamlit sees XSRF/session cookies on the internal WS handshake."""
+    raw = websocket.headers.get("cookie")
+    if raw:
+        return raw
+    if not websocket.cookies:
+        return None
+    return "; ".join(f"{k}={v}" for k, v in websocket.cookies.items())
+
+
 async def _proxy_websocket_to_streamlit(websocket: WebSocket, path: str) -> None:
     base = _streamlit_base()
     if not base:
@@ -224,12 +239,17 @@ async def _proxy_websocket_to_streamlit(websocket: WebSocket, path: str) -> None
             "sec-websocket-version",
             "sec-websocket-protocol",
             "sec-websocket-extensions",
+            "cookie",
         }:
             continue
         extra.append((k, v))
 
     if full_protocol_header:
         extra.append(("Sec-WebSocket-Protocol", full_protocol_header))
+
+    cookie_hdr = _cookie_header_for_upstream(websocket)
+    if cookie_hdr:
+        extra.append(("Cookie", cookie_hdr))
 
     try:
         async with websockets.connect(
@@ -238,6 +258,8 @@ async def _proxy_websocket_to_streamlit(websocket: WebSocket, path: str) -> None
             additional_headers=extra,
             compression=None,
             open_timeout=60,
+            ping_interval=20,
+            ping_timeout=60,
         ) as upstream:
 
             async def client_to_upstream() -> None:
@@ -250,8 +272,12 @@ async def _proxy_websocket_to_streamlit(websocket: WebSocket, path: str) -> None
                             await upstream.send(msg["text"])
                         elif "bytes" in msg:
                             await upstream.send(msg["bytes"])
-                except Exception:
+                except asyncio.CancelledError:
+                    raise
+                except ConnectionClosed:
                     pass
+                except Exception as exc:
+                    logger.warning("streamlit ws client→upstream: %s", exc)
 
             async def upstream_to_client() -> None:
                 try:
@@ -261,11 +287,34 @@ async def _proxy_websocket_to_streamlit(websocket: WebSocket, path: str) -> None
                             await websocket.send_text(raw)
                         else:
                             await websocket.send_bytes(raw)
-                except Exception:
-                    pass
+                except asyncio.CancelledError:
+                    raise
+                except ConnectionClosed as exc:
+                    logger.debug(
+                        "streamlit upstream closed: code=%s reason=%s",
+                        exc.code,
+                        exc.reason,
+                    )
+                except Exception as exc:
+                    logger.warning("streamlit ws upstream→client: %s", exc)
 
-            await asyncio.gather(client_to_upstream(), upstream_to_client())
+            # If one side stops, cancel the other — otherwise receive() can block forever
+            # and Streamlit's frontend reconnects in a tight loop (WebSocket onclose).
+            t_client = asyncio.create_task(client_to_upstream())
+            t_upstream = asyncio.create_task(upstream_to_client())
+            done, pending = await asyncio.wait(
+                (t_client, t_upstream),
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            for t in pending:
+                t.cancel()
+            await asyncio.gather(t_client, t_upstream, return_exceptions=True)
+            try:
+                await websocket.close(code=1000)
+            except Exception:
+                pass
     except Exception:
+        logger.exception("streamlit websocket proxy failed")
         try:
             await websocket.close(code=1011)
         except Exception:
