@@ -19,6 +19,7 @@ import httpx
 import websockets
 from fastapi import WebSocket
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.websockets import WebSocketState
 from websockets.exceptions import ConnectionClosed
 
 from starlette.requests import Request
@@ -252,14 +253,16 @@ async def _proxy_websocket_to_streamlit(websocket: WebSocket, path: str) -> None
         extra.append(("Cookie", cookie_hdr))
 
     try:
+        # Disable client-side keepalive pings: behind Azure they can time out (ping_timeout)
+        # and tear down the link to Streamlit, which makes the browser reconnect in a loop.
         async with websockets.connect(
             target,
             max_size=50 * 1024 * 1024,
             additional_headers=extra,
             compression=None,
             open_timeout=60,
-            ping_interval=20,
-            ping_timeout=60,
+            ping_interval=None,
+            ping_timeout=None,
         ) as upstream:
 
             async def client_to_upstream() -> None:
@@ -290,11 +293,19 @@ async def _proxy_websocket_to_streamlit(websocket: WebSocket, path: str) -> None
                 except asyncio.CancelledError:
                     raise
                 except ConnectionClosed as exc:
+                    rcvd = exc.rcvd
+                    code = int(rcvd.code) if rcvd is not None else 1000
+                    reason = (rcvd.reason or "")[:123] if rcvd is not None else ""
                     logger.debug(
                         "streamlit upstream closed: code=%s reason=%s",
-                        exc.code,
-                        exc.reason,
+                        code,
+                        reason,
                     )
+                    if websocket.application_state == WebSocketState.CONNECTED:
+                        try:
+                            await websocket.close(code=code, reason=reason)
+                        except Exception:
+                            pass
                 except Exception as exc:
                     logger.warning("streamlit ws upstream→client: %s", exc)
 
@@ -309,10 +320,12 @@ async def _proxy_websocket_to_streamlit(websocket: WebSocket, path: str) -> None
             for t in pending:
                 t.cancel()
             await asyncio.gather(t_client, t_upstream, return_exceptions=True)
-            try:
-                await websocket.close(code=1000)
-            except Exception:
-                pass
+            # If the browser leg is still open (e.g. client disconnected first), finish it.
+            if websocket.application_state == WebSocketState.CONNECTED:
+                try:
+                    await websocket.close(code=1000)
+                except Exception:
+                    pass
     except Exception:
         logger.exception("streamlit websocket proxy failed")
         try:
