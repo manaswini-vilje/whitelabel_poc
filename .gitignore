@@ -33,6 +33,9 @@ wheels/
 *.swo
 *~
 
+# Generated at runtime (brand tab title for Streamlit HTML proxy)
+.streamlit_page_title
+
 # Output files
 *.json
 !package.json

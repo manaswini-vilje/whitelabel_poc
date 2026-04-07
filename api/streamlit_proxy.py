@@ -9,6 +9,9 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
+from html import escape
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import httpx
@@ -20,6 +23,8 @@ from starlette.responses import Response
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
+
+POC_ROOT = Path(__file__).resolve().parent.parent
 
 _SKIP_REQUEST_HEADERS = frozenset(
     {
@@ -39,8 +44,41 @@ _SKIP_RESPONSE_HEADERS = frozenset(
         "connection",
         "transfer-encoding",
         "content-encoding",
+        "content-length",
     }
 )
+
+
+def _read_brand_page_title() -> str | None:
+    path = POC_ROOT / ".streamlit_page_title"
+    try:
+        text = path.read_text(encoding="utf-8").strip()
+        return text or None
+    except OSError:
+        return None
+
+
+def _rewrite_streamlit_shell_title(content: bytes, media_type: str) -> bytes:
+    """Replace default <title>Streamlit</title> so the tab matches brand ui.page_title."""
+    if "text/html" not in media_type.lower():
+        return content
+    title = _read_brand_page_title()
+    if not title:
+        return content
+    try:
+        text = content.decode("utf-8")
+    except UnicodeDecodeError:
+        return content
+    if "<title" not in text.lower():
+        return content
+    replaced = re.sub(
+        r"<title>[\s\S]*?</title>",
+        f"<title>{escape(title)}</title>",
+        text,
+        count=1,
+        flags=re.IGNORECASE,
+    )
+    return replaced.encode("utf-8")
 
 
 def _streamlit_base() -> str:
@@ -84,13 +122,18 @@ async def _proxy_http_to_streamlit(request: Request) -> Response:
             content=body if body else None,
         )
 
+    body = _rewrite_streamlit_shell_title(
+        r.content,
+        r.headers.get("content-type", ""),
+    )
+
     out_headers = {
         k: v
         for k, v in r.headers.items()
         if k.lower() not in _SKIP_RESPONSE_HEADERS
     }
 
-    return Response(content=r.content, status_code=r.status_code, headers=out_headers)
+    return Response(content=body, status_code=r.status_code, headers=out_headers)
 
 
 class Streamlit404FallbackMiddleware(BaseHTTPMiddleware):
@@ -117,18 +160,20 @@ def _http_to_ws_base(base: str) -> str:
     return base
 
 
-def _parse_sec_websocket_protocol(websocket: WebSocket) -> str | None:
-    """Streamlit sends Sec-WebSocket-Protocol: streamlit — we must echo it on accept()."""
+def _parse_streamlit_sec_websocket_protocol(
+    websocket: WebSocket,
+) -> tuple[str | None, str]:
+    """Mirror Streamlit's _parse_subprotocols: comma-separated entries keep positions (xsrf, session).
+
+    See streamlit/web/server/starlette/starlette_websocket.py — the header carries more than
+    one token; only the first value is the subprotocol passed to websocket.accept().
+    """
     raw = websocket.headers.get("sec-websocket-protocol", "")
     if not raw:
-        return None
-    tokens = [t.strip() for t in raw.split(",") if t.strip()]
-    if not tokens:
-        return None
-    for t in tokens:
-        if "streamlit" in t.lower():
-            return t
-    return tokens[0]
+        return None, ""
+    entries = [value.strip() for value in raw.split(",")]
+    selected = entries[0] if entries and entries[0] else None
+    return selected, raw
 
 
 def _host_header_value(streamlit_http_base: str) -> str:
@@ -147,39 +192,51 @@ async def _proxy_websocket_to_streamlit(websocket: WebSocket, path: str) -> None
         await websocket.close(code=1011)
         return
 
-    # Must match browser's subprotocol or the handshake fails (Streamlit uses "streamlit").
-    chosen = _parse_sec_websocket_protocol(websocket)
-    negotiated = chosen or "streamlit"
-    await websocket.accept(subprotocol=negotiated)
+    # First comma-separated entry is the subprotocol; rest are xsrf + session (must be preserved).
+    selected_subprotocol, full_protocol_header = _parse_streamlit_sec_websocket_protocol(
+        websocket
+    )
+    await websocket.accept(subprotocol=selected_subprotocol or "streamlit")
 
     target_base = _http_to_ws_base(base)
     target = f"{target_base}/{path}" if path else target_base
     if websocket.url.query:
         target = f"{target}?{websocket.url.query}"
 
-    host_header = _host_header_value(base)
-    extra: list[tuple[str, str]] = [("Host", host_header)]
+    # Streamlit validates Origin against Host; internal Host 127.0.0.1 + public Origin fails.
+    # Use the browser's Host / Origin so _is_origin_allowed matches the real site.
+    public_host = websocket.headers.get("host") or _host_header_value(base)
+    extra: list[tuple[str, str]] = [
+        ("Host", public_host),
+    ]
+    origin = websocket.headers.get("origin")
+    if origin:
+        extra.append(("Origin", origin))
+
     for k, v in websocket.headers.items():
         lk = k.lower()
         if lk in {
             "host",
+            "origin",
             "connection",
             "upgrade",
             "sec-websocket-key",
             "sec-websocket-version",
             "sec-websocket-protocol",
+            "sec-websocket-extensions",
         }:
             continue
         extra.append((k, v))
 
-    subprotocols: list[str] = [negotiated]
+    if full_protocol_header:
+        extra.append(("Sec-WebSocket-Protocol", full_protocol_header))
 
     try:
         async with websockets.connect(
             target,
             max_size=50 * 1024 * 1024,
-            subprotocols=subprotocols,
             additional_headers=extra,
+            compression=None,
             open_timeout=60,
         ) as upstream:
 

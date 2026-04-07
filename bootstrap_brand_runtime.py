@@ -66,6 +66,12 @@ def bootstrap_brand_runtime(project_root: Path) -> int:
     config_path = project_root / ".streamlit" / "config.toml"
     config_path.write_text(build_streamlit_config(brand_config), encoding="utf-8")
 
+    # Used by api/streamlit_proxy.py to rewrite the shell HTML <title> (defaults to "Streamlit"
+    # before the app connects) so the browser tab shows the same name as st.set_page_config.
+    (project_root / ".streamlit_page_title").write_text(
+        brand_config.ui.page_title, encoding="utf-8"
+    )
+
     print(f"Bootstrapped brand: {brand_config.brand_id}")
     print(f"Runtime root: {runtime_root}")
     print(f"Streamlit config: {config_path}")
