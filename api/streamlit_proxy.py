@@ -117,31 +117,70 @@ def _http_to_ws_base(base: str) -> str:
     return base
 
 
+def _parse_sec_websocket_protocol(websocket: WebSocket) -> str | None:
+    """Streamlit sends Sec-WebSocket-Protocol: streamlit — we must echo it on accept()."""
+    raw = websocket.headers.get("sec-websocket-protocol", "")
+    if not raw:
+        return None
+    tokens = [t.strip() for t in raw.split(",") if t.strip()]
+    if not tokens:
+        return None
+    for t in tokens:
+        if "streamlit" in t.lower():
+            return t
+    return tokens[0]
+
+
+def _host_header_value(streamlit_http_base: str) -> str:
+    from urllib.parse import urlparse
+
+    u = urlparse(streamlit_http_base)
+    host = u.hostname or "127.0.0.1"
+    if u.port:
+        return f"{host}:{u.port}"
+    return host
+
+
 async def _proxy_websocket_to_streamlit(websocket: WebSocket, path: str) -> None:
     base = _streamlit_base()
     if not base:
         await websocket.close(code=1011)
         return
 
-    await websocket.accept()
+    # Must match browser's subprotocol or the handshake fails (Streamlit uses "streamlit").
+    chosen = _parse_sec_websocket_protocol(websocket)
+    negotiated = chosen or "streamlit"
+    await websocket.accept(subprotocol=negotiated)
 
     target_base = _http_to_ws_base(base)
     target = f"{target_base}/{path}" if path else target_base
     if websocket.url.query:
         target = f"{target}?{websocket.url.query}"
 
-    extra: list[tuple[str, str]] = []
+    host_header = _host_header_value(base)
+    extra: list[tuple[str, str]] = [("Host", host_header)]
     for k, v in websocket.headers.items():
         lk = k.lower()
-        if lk in {"host", "connection", "upgrade"}:
+        if lk in {
+            "host",
+            "connection",
+            "upgrade",
+            "sec-websocket-key",
+            "sec-websocket-version",
+            "sec-websocket-protocol",
+        }:
             continue
         extra.append((k, v))
+
+    subprotocols: list[str] = [negotiated]
 
     try:
         async with websockets.connect(
             target,
             max_size=50 * 1024 * 1024,
+            subprotocols=subprotocols,
             additional_headers=extra,
+            open_timeout=60,
         ) as upstream:
 
             async def client_to_upstream() -> None:

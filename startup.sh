@@ -1,6 +1,7 @@
 #!/bin/bash
 # Azure App Service: one public process (uvicorn) on $PORT. Streamlit listens on loopback only;
 # FastAPI serves /api/* and /health and proxies everything else to Streamlit.
+# Azure Portal → Configuration → General settings → Web sockets = On (required for /_stcore/stream).
 #
 # Startup Command: bash startup.sh
 
