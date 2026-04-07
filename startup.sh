@@ -42,8 +42,12 @@ else:
     raise SystemExit("Streamlit did not become ready in time")
 PY
 
+# Long-lived /stream WebSockets: default uvicorn ping timeout (20s) can drop the browser leg
+# behind Azure/proxies before pong returns, causing Streamlit to reconnect forever (skeleton UI).
 exec python -m uvicorn api.main:app \
   --host 0.0.0.0 \
   --port "$PORT" \
   --proxy-headers \
-  --forwarded-allow-ips='*'
+  --forwarded-allow-ips='*' \
+  --ws-ping-interval 60 \
+  --ws-ping-timeout 300
