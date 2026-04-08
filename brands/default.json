@@ -2,11 +2,11 @@
   "brand_id": "default",
   "app_name": "Umbrella PO",
   "ui": {
-    "page_title": "Northstar Flow",
+    "page_title": "Viljetech Flow",
     "page_icon": "📄",
     "title": "Document Flow Studio",
     "description": "Upload a supplier PDF and transform it into structured purchase order output through a polished white-label workflow.",
-    "display_brand_name": "Northstar Atelier",
+    "display_brand_name": "Viljetech Labs",
     "display_warehouse_label": "Fulfillment Cluster A",
     "display_blob_target_label": "Private Output Route",
     "display_runtime_label": "Secure Runtime Workspace",

@@ -83,7 +83,8 @@ def api_health():
 
 @app.get("/api/brand")
 def api_brand():
-    return brand_to_json(get_brand())
+    # Read from disk each time so edits to brands/*.json apply without restarting uvicorn.
+    return brand_to_json(load_brand_config(project_root=POC_ROOT))
 
 
 @app.post("/api/process")
