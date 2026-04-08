@@ -2,7 +2,7 @@
   "brand_id": "default",
   "app_name": "Umbrella PO",
   "ui": {
-    "page_title": "Viljetech Flow",
+    "page_title": "Document Flow Studio",
     "page_icon": "📄",
     "title": "Document Flow Studio",
     "description": "Upload a supplier PDF and transform it into structured purchase order output through a polished white-label workflow.",
